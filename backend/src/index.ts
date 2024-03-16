@@ -3,6 +3,6 @@ import { v1 } from "./routes/routes";
 
 const app = new Hono();
 
-app.route("/api/v1", v1);
+app.route("/api", v1);
 
 export default app;

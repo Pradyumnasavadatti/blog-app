@@ -1,20 +1,11 @@
 import { Hono } from "hono";
-import { RegExpRouter } from "hono/router/reg-exp-router";
+import { userRoute } from "./userRoute";
+import { blogRoute } from "./blogRoute";
+import { ENV } from "./common";
 
-export const v1 = new Hono({ router: new RegExpRouter() });
+export const v1 = new Hono<{
+  Bindings: ENV;
+}>();
 
-v1.post("/signup", (c) => {
-  return c.text("test");
-});
-v1.post("/signin", (c) => {
-  return c.text("test");
-});
-v1.post("/blog", (c) => {
-  return c.text("test");
-});
-v1.put("/blog", (c) => {
-  return c.text("test");
-});
-v1.get("/blog/:blogId", (c) => {
-  return c.text("test");
-});
+v1.route("/v1/user", userRoute);
+v1.route("v1/blog", blogRoute);
