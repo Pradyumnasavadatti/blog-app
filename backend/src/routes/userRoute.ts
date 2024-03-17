@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { decode, jwt, sign } from "hono/jwt";
 import { ENV } from "./common";
+import { SignupVal } from "@pradyumnaps7/blog-types";
 
 export const userRoute = new Hono<{
   Bindings: ENV;
@@ -16,6 +17,13 @@ userRoute.post("/signup", async (c) => {
   const body = await c.req.json();
 
   try {
+    const valObj = SignupVal.safeParse(body);
+    if (!valObj.success) {
+      c.status(411);
+      return c.json({
+        message: valObj.error,
+      });
+    }
     const res = await prisma.user.create({
       data: {
         email: body.email,
@@ -38,29 +46,44 @@ userRoute.post("/signup", async (c) => {
 });
 
 userRoute.post("/signin", async (c) => {
-  const prisma = new PrismaClient({
-    datasourceUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  try {
+    const prisma = new PrismaClient({
+      datasourceUrl: c.env.DATABASE_URL,
+    }).$extends(withAccelerate());
 
-  const body = await c.req.json();
+    const body = await c.req.json();
 
-  const user = await prisma.user.findUnique({
-    where: {
-      email: body.email,
-      password: body.password,
-    },
-  });
+    const valObj = SignupVal.safeParse(body);
+    if (!valObj.success) {
+      c.status(411);
+      return c.json({
+        message: valObj.error,
+      });
+    }
 
-  if (!user) {
-    c.status(403);
+    const user = await prisma.user.findUnique({
+      where: {
+        email: body.email,
+        password: body.password,
+      },
+    });
+
+    if (!user) {
+      c.status(403);
+      return c.json({
+        message: "User does't exists",
+      });
+    }
+
+    const token = await sign({ id: user.id }, c.env.JWT_SECRET);
+
     return c.json({
-      message: "User does't exists",
+      token,
+    });
+  } catch (e) {
+    c.status(411);
+    return c.json({
+      message: "Invalid credentials",
     });
   }
-
-  const token = await sign({ id: user.id }, c.env.JWT_SECRET);
-
-  return c.json({
-    token,
-  });
 });

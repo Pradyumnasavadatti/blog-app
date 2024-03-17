@@ -3,6 +3,7 @@ import { ENV, VARS } from "./common";
 import { verify } from "hono/jwt";
 import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
+import { CreateBlogVal, UpdateBlogVal } from "@pradyumnaps7/blog-types";
 
 export const blogRoute = new Hono<{
   Bindings: ENV;
@@ -27,6 +28,13 @@ blogRoute.use("/*", async (c, next) => {
 blogRoute.post("/", async (c) => {
   try {
     const body = await c.req.json();
+    const valObj = CreateBlogVal.safeParse(body);
+    if (!valObj.success) {
+      c.status(411);
+      return c.json({
+        message: valObj.error.issues[0].message,
+      });
+    }
     const prisma = new PrismaClient({
       datasourceUrl: c.env.DATABASE_URL,
     }).$extends(withAccelerate());
@@ -35,6 +43,7 @@ blogRoute.post("/", async (c) => {
       data: {
         title: body.title,
         content: body.content,
+        published: true,
         authorId: c.get("userId"),
       },
     });
@@ -54,6 +63,13 @@ blogRoute.post("/", async (c) => {
 blogRoute.put("/", async (c) => {
   try {
     const body = await c.req.json();
+    const valObj = UpdateBlogVal.safeParse(body);
+    if (!valObj.success) {
+      c.status(411);
+      return c.json({
+        message: valObj.error,
+      });
+    }
     const prisma = new PrismaClient({
       datasourceUrl: c.env.DATABASE_URL,
     }).$extends(withAccelerate());
@@ -65,6 +81,7 @@ blogRoute.put("/", async (c) => {
       data: {
         title: body.title,
         content: body.content,
+        published: body.published,
       },
     });
 
