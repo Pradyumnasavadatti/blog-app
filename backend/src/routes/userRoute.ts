@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { decode, jwt, sign } from "hono/jwt";
 import { ENV } from "./common";
-import { SignupVal } from "@pradyumnaps7/blog-types";
+import { SigninVal, SignupVal } from "@pradyumnaps7/blog-types";
 
 export const userRoute = new Hono<{
   Bindings: ENV;
@@ -21,7 +21,7 @@ userRoute.post("/signup", async (c) => {
     if (!valObj.success) {
       c.status(411);
       return c.json({
-        message: valObj.error,
+        message: valObj.error.issues[0].message,
       });
     }
     const res = await prisma.user.create({
@@ -53,11 +53,11 @@ userRoute.post("/signin", async (c) => {
 
     const body = await c.req.json();
 
-    const valObj = SignupVal.safeParse(body);
+    const valObj = SigninVal.safeParse(body);
     if (!valObj.success) {
       c.status(411);
       return c.json({
-        message: valObj.error,
+        message: valObj.error.issues[0].message,
       });
     }
 

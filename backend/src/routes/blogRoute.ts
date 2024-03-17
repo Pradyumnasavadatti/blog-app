@@ -67,7 +67,7 @@ blogRoute.put("/", async (c) => {
     if (!valObj.success) {
       c.status(411);
       return c.json({
-        message: valObj.error,
+        message: valObj.error.issues[0].message,
       });
     }
     const prisma = new PrismaClient({
@@ -99,7 +99,6 @@ blogRoute.put("/", async (c) => {
 blogRoute.get("/bulk", async (c) => {
   try {
     const params = c.req.query("skip");
-    console.log(params);
     const prisma = new PrismaClient({
       datasourceUrl: c.env.DATABASE_URL,
     }).$extends(withAccelerate());
